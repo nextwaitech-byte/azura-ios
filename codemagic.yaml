@@ -1,0 +1,50 @@
+# Codemagic: native Swift iOS → App Store Connect / TestFlight
+# Repo: https://github.com/nextwaitech-byte/azura-ios
+# Bundle ID: tz.azurastore.app
+#
+# Codemagic Apple integration label must match exactly:
+#   integrations.app_store_connect: applestoreconnectkey
+# See CODEMAGIC_IOS_GUIDE.md
+
+workflows:
+  ios-azura-store:
+    name: Azura Store iOS (IPA → App Store)
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+
+    integrations:
+      app_store_connect: applestoreconnectkey
+
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: tz.azurastore.app
+      vars:
+        XCODE_PROJECT: AzuraStore.xcodeproj
+        XCODE_SCHEME: AzuraStore
+        APP_STORE_APPLE_ID: $APP_STORE_APPLE_ID  # set in Codemagic UI (numeric App Store Connect app id), optional
+
+    scripts:
+      - name: Set up code signing
+        script: |
+          xcode-project use-profiles
+
+      - name: Build IPA
+        script: |
+          BUILD_NUMBER=${BUILD_NUMBER:-$(date +%Y%m%d%H%M)}
+          cd "$CM_BUILD_DIR"
+          xcode-project build-ipa \
+            --project "$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME" \
+            --config Release
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        # submit_to_app_store: false
