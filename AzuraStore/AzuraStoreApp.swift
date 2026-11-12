@@ -75,7 +75,7 @@ final class ShopStore: ObservableObject {
         let value = URLComponents(url: url, resolvingAgainstBaseURL: false)?
             .queryItems?.first(where: { $0.name == "url" })?.value
             ?? origin(from: url)
-        if let value { save(url: value) }
+        if !value.isEmpty { save(url: value) }
         Task { await boot() }
     }
 
